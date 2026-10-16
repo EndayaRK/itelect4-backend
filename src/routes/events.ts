@@ -5,33 +5,20 @@ import type { NewEventBody } from "../types/index";
 
 export const eventRouter = Router();
 
-// ============================================
-// One line protects every route below it
-// ============================================
-eventRouter.use(requireAuth);
-
 interface IdParam {
   id: string;
 }
 
 // ============================================
-// GET /api/events — only THIS user's events
+// PUBLIC: browse the event catalog. No token.
 // ============================================
-eventRouter.get("/", async (req: Request, res: Response) => {
-  const events = await Event.find({ organizerId: req.userId }).sort({
-    startDate: -1,
-  });
+eventRouter.get("/", async (_req: Request, res: Response) => {
+  const events = await Event.find().sort({ startDate: -1 });
   res.json(events);
 });
 
-// ============================================
-// GET /api/events/:id — one event, still scoped to the user
-// ============================================
 eventRouter.get("/:id", async (req: Request<IdParam>, res: Response) => {
-  const event = await Event.findOne({
-    _id: req.params.id,
-    organizerId: req.userId,
-  });
+  const event = await Event.findById(req.params.id);
 
   if (!event) {
     res.status(404).json({ message: "No event with that id" });
@@ -42,23 +29,22 @@ eventRouter.get("/:id", async (req: Request<IdParam>, res: Response) => {
 });
 
 // ============================================
-// POST /api/events — create a new event
+// PRIVATE: everything below needs a token
 // ============================================
+eventRouter.use(requireAuth);
+
 eventRouter.post(
   "/",
   async (req: Request<unknown, unknown, NewEventBody>, res: Response) => {
     const event = await Event.create({
       ...req.body,
-      // organizerId comes from the verified token, NOT from the request body
+      // organizerId comes from the verified token, NOT from the body
       organizerId: req.userId,
     });
     res.status(201).json(event);
   }
 );
 
-// ============================================
-// PATCH /api/events/:id — update a field
-// ============================================
 eventRouter.patch(
   "/:id",
   async (
@@ -68,8 +54,6 @@ eventRouter.patch(
     const event = await Event.findOneAndUpdate(
       { _id: req.params.id, organizerId: req.userId },
       req.body,
-      // new: return the row AFTER the change
-      // runValidators: schema rules are skipped on updates otherwise
       { new: true, runValidators: true }
     );
 
@@ -82,9 +66,6 @@ eventRouter.patch(
   }
 );
 
-// ============================================
-// DELETE /api/events/:id
-// ============================================
 eventRouter.delete(
   "/:id",
   async (req: Request<IdParam>, res: Response) => {
