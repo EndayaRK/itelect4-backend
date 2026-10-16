@@ -59,3 +59,25 @@ export type NewEventBody = Pick<
   Event,
   "title" | "description" | "category" | "capacity" | "location" | "startDate" | "endDate"
 >;
+
+// What the database actually stores for a Registration.
+// id, eventId and userId all become MongoDB's own types.
+export type RegistrationDoc = Omit<
+  Registration,
+  "id" | "eventId" | "userId"
+> & {
+  eventId: Types.ObjectId;
+  userId: Types.ObjectId;
+};
+
+// What a client is allowed to send when creating a Registration.
+//
+// eventId is a MongoDB id as a 24-character hex STRING, not a number.
+// It stopped being a number the moment the mock array in mockData.ts
+// was replaced by a real database -- MongoDB's _id is a string when it
+// reaches the client.
+export type NewRegistrationBody = {
+  eventId: string;
+  status: "pending" | "confirmed" | "cancelled" | "waitlisted";
+  notes?: string;
+};
