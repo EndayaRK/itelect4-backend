@@ -10,6 +10,7 @@ import { connectDB } from "./config/db";
 import { authRouter } from "./routes/auth";
 import { eventRouter } from "./routes/events";
 import { registrationRouter } from "./routes/registrations";
+import { aiRouter } from "./routes/ai";
 
 // This file builds the app and stops. It never opens a port.
 export const app = express();
@@ -50,6 +51,7 @@ app.get("/api/health", (_req: Request, res: Response) => {
 app.use("/api/auth", authRouter);
 app.use("/api/events", eventRouter);
 app.use("/api/registrations", registrationRouter);
+app.use("/api/ai", aiRouter);
 
 // ============================================
 // 6. 404
